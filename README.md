@@ -52,8 +52,63 @@ python3 manage.py startapp chat
 </html>
 ```
 
+<p>
+  Put the following code in chat/views.py:
+</p>
+
+```
+# chat/views.py
+from django.shortcuts import render
 
 
+def index(request):
+    return render(request, "chat/index.html")
+```
+<p>
+  To call the view, we need to map it to a URL - and for this we need a URLconf.
+  create a file called `urls.py` in chat directory.
+  In the chat/urls.py file include the following code:
+</p>
+
+```
+# chat/urls.py
+from django.urls import path
+
+from . import views
+
+
+urlpatterns = [
+    path("", views.index, name="index"),
+]
+```
+<p>
+  The next step is to point the root URLconf at the chat.urls module. In mysite/urls.py:
+</p>
+
+```
+# mysite/urls.py
+from django.contrib import admin
+from django.urls import include, path
+
+urlpatterns = [
+    path("chat/", include("chat.urls")),
+    path("admin/", admin.site.urls),
+]
+```
+### Lets Verify:
+```
+python3 manage.py runserver
+```
+### Go to <code>http://127.0.0.1:8000/chat/</code>
+### Type in “lobby” ... <code>http://127.0.0.1:8000/chat/lobby/</code>
+<p>
+  Output:
+  we haven’t written the room view yet, so you’ll get a <mark>“Page not found”</mark> error page.
+</p>
+
+### Prepare for next step ... press Control-C
+
+## 
 
 
 
