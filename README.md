@@ -8,8 +8,7 @@ python3 -m venv channelenv
 pip install daphne==4.1.2
 pip install channels=4.0.0
 ```
-<p>Remember: written for `Channels 4.0`, which supports `Python 3.7+` and `Django 3.2+`.</p>
-
+Remember: written for `Channels 4.0`, which supports `Python 3.7+` and `Django 3.2+`.
 ```
 django-admin startproject mysite
 ```
