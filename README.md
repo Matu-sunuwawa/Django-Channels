@@ -108,7 +108,14 @@ python3 manage.py runserver
 
 ### Prepare for next step ... press Control-C
 
-## 
+## Integrate the Channels library
+<p>
+  So far we’ve just created a regular Django app; we haven’t used the Channels library at all. Now it’s time to integrate Channels.
+  This one is really basic ideas behind Django-channels which you need to understand what is going on...
+
+  *Let’s start by creating a `routing configuration` for Channels. A Channels routing configuration is an `ASGI application` that is similar to a `Django URLconf`, 
+  in that it `tells Channels what code to run when an HTTP request is received` by the Channels server.
+</p>
 
 
 
