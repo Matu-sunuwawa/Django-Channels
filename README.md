@@ -156,8 +156,20 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 ```
-
-
+You’ll also need to point `Daphne` at the root routing configuration. Edit the `mysite/settings.py` at bottom of it:
+```
+# mysite/settings.py
+# Daphne
+ASGI_APPLICATION = "mysite.asgi.application"
+```
+*With Daphne now in the `installed apps`, it `will take control of the runserver command`, replacing the `standard Django development server` with the `ASGI compatible version`.
+```
+python3 manage.py runserver
+```
+### Output:
+*Notice the line beginning with `Starting ASGI/Daphne...`
+### Go to <code>http://127.0.0.1:8000/chat/](http://127.0.0.1:8000/chat/</code>
+### Prepare for next step ... press Control-C
 
 
 
