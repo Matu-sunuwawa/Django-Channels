@@ -67,7 +67,8 @@ def index(request):
 <p>
   To call the view, we need to map it to a URL - and for this we need a URLconf.
   create a file called `urls.py` in chat directory.
-  In the chat/urls.py file include the following code:
+  
+  Put the following code in chat/urls.py:
 </p>
 
 ```
@@ -82,7 +83,7 @@ urlpatterns = [
 ]
 ```
 <p>
-  The next step is to point the root URLconf at the chat.urls module. In mysite/urls.py:
+  Put the following code in mysite/urls.py:
 </p>
 
 ```
@@ -111,12 +112,44 @@ python3 manage.py runserver
 ## Integrate the Channels library
 <p>
   So far we’ve just created a regular Django app; we haven’t used the Channels library at all. Now it’s time to integrate Channels.
-  This one is really basic ideas behind Django-channels which you need to understand what is going on...
+  Understanding the basic concepts behind Django Channels is crucial to grasp what’s happening under the hood....
 
   *Let’s start by creating a `routing configuration` for Channels. A Channels routing configuration is an `ASGI application` that is similar to a `Django URLconf`, 
   in that it `tells Channels what code to run when an HTTP request is received` by the Channels server.
+
+  Put the following code in mysite/asgi.py:
 </p>
 
+```
+# mysite/asgi.py
+import os
+
+from channels.routing import ProtocolTypeRouter
+from django.core.asgi import get_asgi_application
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+
+application = ProtocolTypeRouter(
+    {
+        "http": get_asgi_application(),
+        # Just HTTP for now. (We can add other protocols later.)
+    }
+)
+```
+<p>Edit the mysite/settings.py file and add 'daphne' to the top of the INSTALLED_APPS:</p>
+```
+# mysite/settings.py
+INSTALLED_APPS = [
+    'daphne',
+    'chat',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]
+```
 
 
 
