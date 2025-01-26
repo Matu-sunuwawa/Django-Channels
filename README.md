@@ -444,7 +444,65 @@ Open a `browser tab` to the room page at http://127.0.0.1:8000/chat/lobby/. Open
 In the second browser tab, type the message “hello” and press enter. You should now see “hello” echoed in the chat log in both 
 the <mark>second browser</mark> tab and in the <mark>first browser</mark> tab.
 
-<h3>I Gotcha You My Bro ... Congrats ... You now have a basic <mark>fully-functional</mark>mark chat server!<h3>
+<h3>I Gotcha You My Bro ... Congrats ... You now have a basic <mark>fully-functional</mark> chat server!<h3>
+
+##Rewrite Chat Server as Asynchronous
+###Rewrite the consumer to be asynchronous
+Put the following code in `chat/consumers.py`:
+```
+# chat/consumers.py
+import json
+
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+        self.room_group_name = f"chat_{self.room_name}"
+
+        # Join room group
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    # Receive message from WebSocket
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json["message"]
+
+        # Send message to room group
+        await self.channel_layer.group_send(
+            self.room_group_name, {"type": "chat.message", "message": message}
+        )
+
+    # Receive message from room group
+    async def chat_message(self, event):
+        message = event["message"]
+
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({"message": message}))
+```
+`new code` is very similar to the `original code`, with the following <mark>differences</mark>:
+* ChatConsumer now inherits from `AsyncWebsocketConsumer` rather than `WebsocketConsumer`.
+* All methods are `async def` rather than just `def`.
+* `await` is used to call asynchronous functions that perform I/O.
+* async_to_sync is no longer needed.
+
+```
+python3 manage.py runserver
+```
+###Final Test:
+Open a browser tab to the room page at `http://127.0.0.1:8000/chat/lobby/`. Open a second browser tab to the same room page.
+In the second browser tab, type the message “hello” and press enter. You should now see “hello” echoed in the chat log in both 
+the second browser tab and in the first browser tab.
+
+<h3>Congrats ... Now your chat server is fully asynchronous!</h3>
+
 
 
 
