@@ -444,7 +444,7 @@ Open a `browser tab` to the room page at http://127.0.0.1:8000/chat/lobby/. Open
 In the second browser tab, type the message “hello” and press enter. You should now see “hello” echoed in the chat log in both 
 the <mark>second browser</mark> tab and in the <mark>first browser</mark> tab.
 
-<h3>🎉I Gotcha You My Bro ... Congrats ... You now have a basic <mark>fully-functional</mark> chat server!<h3>
+<h3>🎉I Gotcha My Bro ... Congrats ... You now have a basic <mark>fully-functional</mark> chat server!<h3>
 
 ## Rewrite Chat Server as Asynchronous
 ### Rewrite the consumer to be asynchronous
