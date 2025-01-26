@@ -171,8 +171,8 @@ python3 manage.py runserver
 ### Go to <code>http://127.0.0.1:8000/chat/](http://127.0.0.1:8000/chat/</code>
 ### Prepare for next step ... press Control-C
 
-##Implement a Chat Server
-###Add the room view
+## Implement a Chat Server
+### Add the room view
 Create the view template for the room view in `chat/templates/chat/room.html`:
 ```
 <!-- chat/templates/chat/room.html -->
@@ -444,7 +444,7 @@ Open a `browser tab` to the room page at http://127.0.0.1:8000/chat/lobby/. Open
 In the second browser tab, type the message “hello” and press enter. You should now see “hello” echoed in the chat log in both 
 the <mark>second browser</mark> tab and in the <mark>first browser</mark> tab.
 
-<h3>I Gotcha You My Bro ... Congrats ... You now have a basic <mark>fully-functional</mark> chat server!<h3>
+<h3>🎉I Gotcha You My Bro ... Congrats ... You now have a basic <mark>fully-functional</mark> chat server!<h3>
 
 ## Rewrite Chat Server as Asynchronous
 ### Rewrite the consumer to be asynchronous
