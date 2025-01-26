@@ -171,6 +171,181 @@ python3 manage.py runserver
 ### Go to <code>http://127.0.0.1:8000/chat/](http://127.0.0.1:8000/chat/</code>
 ### Prepare for next step ... press Control-C
 
+##Implement a Chat Server
+###Add the room view
+Create the view template for the room view in `chat/templates/chat/room.html`:
+```
+<!-- chat/templates/chat/room.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Chat Room</title>
+</head>
+<body>
+    <textarea id="chat-log" cols="100" rows="20"></textarea><br>
+    <input id="chat-message-input" type="text" size="100"><br>
+    <input id="chat-message-submit" type="button" value="Send">
+    {{ room_name|json_script:"room-name" }}
+    <script>
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+        const chatSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/chat/'
+            + roomName
+            + '/'
+        );
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            document.querySelector('#chat-log').value += (data.message + '\n');
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.key === 'Enter') {  // enter, return
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const message = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInputDom.value = '';
+        };
+    </script>
+</body>
+</html>
+```
+Create the view function for the room view in `chat/views.py`:
+```
+# chat/views.py
+from django.shortcuts import render
+
+
+def index(request):
+    return render(request, "chat/index.html")
+
+
+def room(request, room_name):
+    return render(request, "chat/room.html", {"room_name": room_name})
+```
+Create the route for the room view in `chat/urls.py`:
+```
+# chat/urls.py
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path("", views.index, name="index"),
+    path("<str:room_name>/", views.room, name="room"),
+]
+```
+```
+python3 manage.py runserver
+```
+### Go to `http://127.0.0.1:8000/chat/`
+### Type in “lobby” as the room name and press enter and output: http://127.0.0.1:8000/chat/lobby/
+Question: Type the message “hello” and press enter. `Nothing happens`. Why?
+Answer: The room view is trying to open a WebSocket to the URL ws://127.0.0.1:8000/ws/chat/lobby/ but `we haven’t created a consumer` that accepts WebSocket connections yet.
+browser’s JavaScript console:
+```
+WebSocket connection to 'ws://127.0.0.1:8000/ws/chat/lobby/' failed: Unexpected response code: 500
+```
+###Write your first consumer
+`Important Note(what is going on consumer?):`
+When Django accepts an `HTTP request`, it consults the `root URLconf to lookup a view function`, and `then calls the view function` to handle the request. 
+`Similarly`, when Channels accepts a `WebSocket connection`, it consults the `root routing configuration` to lookup a consumer, 
+and `then calls various functions` on the consumer to handle events from the connection.
+
+`Note That(who the hell are you /ws/):`
+It is good practice to use a common path prefix like `/ws/` to distinguish WebSocket connections from ordinary `HTTP connections`
+
+Put the following code in `chat/consumers.py`:
+```
+# chat/consumers.py
+import json
+
+from channels.generic.websocket import WebsocketConsumer
+
+
+class ChatConsumer(WebsocketConsumer):
+    def connect(self):
+        self.accept()
+
+    def disconnect(self, close_code):
+        pass
+
+    def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json["message"]
+
+        self.send(text_data=json.dumps({"message": message}))
+```
+This is a `synchronous WebSocket consumer` that accepts all connections, receives messages from its client, 
+and echos those messages back to the same client. For now `it does not broadcast messages to other clients in the same room`.
+==> so we will rewrite chat server as `Asynchronous`: inorder to enable to broadcast messages to other clients in the same room.
+
+Put the following code in `chat/routing.py` which has a `route to the consumer`:
+```
+# chat/routing.py
+from django.urls import re_path
+
+from . import consumers
+
+websocket_urlpatterns = [
+    re_path(r"ws/chat/(?P<room_name>\w+)/$", consumers.ChatConsumer.as_asgi()),
+]
+```
+Put the following code in `mysite/asgi.py`
+```
+# mysite/asgi.py
+import os
+
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.security.websocket import AllowedHostsOriginValidator
+from django.core.asgi import get_asgi_application
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+# Initialize Django ASGI application early to ensure the AppRegistry
+# is populated before importing code that may import ORM models.
+django_asgi_app = get_asgi_application()
+
+from chat.routing import websocket_urlpatterns
+
+application = ProtocolTypeRouter(
+    {
+        "http": django_asgi_app,
+        "websocket": AllowedHostsOriginValidator(
+            AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
+        ),
+    }
+)
+```
+the `ProtocolTypeRouter` will first inspect the `type of connection`. If it is a WebSocket connection (ws:// or wss://), the connection will be given to the `AuthMiddlewareStack`.
+The `AuthMiddlewareStack` will populate the connection’s scope with a reference to the currently authenticated user.
+```
+python manage.py migrate
+```
+
+
+
+
+
+
+
+
 
 
 
