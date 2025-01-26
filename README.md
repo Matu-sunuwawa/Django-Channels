@@ -335,9 +335,117 @@ application = ProtocolTypeRouter(
 ```
 the `ProtocolTypeRouter` will first inspect the `type of connection`. If it is a WebSocket connection (ws:// or wss://), the connection will be given to the `AuthMiddlewareStack`.
 The `AuthMiddlewareStack` will populate the connection’s scope with a reference to the currently authenticated user.
+###RUN:
 ```
 python manage.py migrate
 ```
+```
+python3 manage.py runserver
+```
+###Go to the room page at `http://127.0.0.1:8000/chat/lobby/`
+###Type the message “hello” and press enter. You should now see “hello” echoed in the chat log.
+However if you <mark>open a second browser tab</mark> to the same room page at `http://127.0.0.1:8000/chat/lobby/` and type in a message, 
+the <mark>message will not appear</mark> in the first tab. For that to work, <mark>we need to have multiple instances of the same ChatConsumer</mark>
+be able to talk to each other. Channels provides a `channel laye`r abstraction that enables this kind of communication between consumers.
+
+###Enable a channel layer
+A channel layer provides:
+*A channel is a mailbox where messages can be sent to
+*A group is a group of related channels.
+
+We will use a channel layer that uses `Redis as its backing store`.
+```
+docker run --rm -p 6379:6379 redis:7
+```
+If docker is not working fine:
+```
+systemctl start docker
+docker ps
+```
+```
+python3 -m pip install channels_redis
+```
+*so that Channels knows how to interface with Redis
+
+Edit the `mysite/settings.py`:
+```
+# mysite/settings.py
+# Channels
+ASGI_APPLICATION = "mysite.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+```
+Let’s make sure that the channel layer can communicate with Redis. `Open a Django shell` and <mark>run the following commands</mark>:
+```
+$ python3 manage.py shell
+import channels.layers
+channel_layer = channels.layers.get_channel_layer()
+from asgiref.sync import async_to_sync
+async_to_sync(channel_layer.send)('test_channel', {'type': 'hello'})
+async_to_sync(channel_layer.receive)('test_channel')
+
+output(result):{'type': 'hello'}
+```
+`chat/consumers.py`, replacing the old code:
+```
+# chat/consumers.py
+import json
+
+from asgiref.sync import async_to_sync
+from channels.generic.websocket import WebsocketConsumer
+
+
+class ChatConsumer(WebsocketConsumer):
+    def connect(self):
+        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+        self.room_group_name = f"chat_{self.room_name}"
+
+        # Join room group
+        async_to_sync(self.channel_layer.group_add)(
+            self.room_group_name, self.channel_name
+        )
+
+        self.accept()
+
+    def disconnect(self, close_code):
+        # Leave room group
+        async_to_sync(self.channel_layer.group_discard)(
+            self.room_group_name, self.channel_name
+        )
+
+    # Receive message from WebSocket
+    def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json["message"]
+
+        # Send message to room group
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name, {"type": "chat.message", "message": message}
+        )
+
+    # Receive message from room group
+    def chat_message(self, event):
+        message = event["message"]
+
+        # Send message to WebSocket
+        self.send(text_data=json.dumps({"message": message}))
+```
+async_to_sync(...) because `ChatConsumer is a synchronous WebsocketConsumer` but it is `calling an asynchronous channel layer` method.(All `channel layer` methods are `asynchronous`.)
+```
+python3 manage.py runserver
+```
+Open a `browser tab` to the room page at http://127.0.0.1:8000/chat/lobby/. Open a `second browser tab` to the same room page.
+In the second browser tab, type the message “hello” and press enter. You should now see “hello” echoed in the chat log in both 
+the <mark>second browser</mark> tab and in the <mark>first browser</mark> tab.
+
+<h3>I Gotcha You My Bro ... Congrats ... You now have a basic <mark>fully-functional</mark>mark chat server!<h3>
+
 
 
 
