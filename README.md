@@ -262,7 +262,7 @@ browser’s JavaScript console:
 ```
 WebSocket connection to 'ws://127.0.0.1:8000/ws/chat/lobby/' failed: Unexpected response code: 500
 ```
-###Write your first consumer
+### Write your first consumer
 `Important Note(what is going on consumer?):`
 When Django accepts an `HTTP request`, it consults the `root URLconf to lookup a view function`, and `then calls the view function` to handle the request. 
 `Similarly`, when Channels accepts a `WebSocket connection`, it consults the `root routing configuration` to lookup a consumer, 
@@ -335,20 +335,20 @@ application = ProtocolTypeRouter(
 ```
 the `ProtocolTypeRouter` will first inspect the `type of connection`. If it is a WebSocket connection (ws:// or wss://), the connection will be given to the `AuthMiddlewareStack`.
 The `AuthMiddlewareStack` will populate the connection’s scope with a reference to the currently authenticated user.
-###RUN:
+### RUN:
 ```
 python manage.py migrate
 ```
 ```
 python3 manage.py runserver
 ```
-###Go to the room page at `http://127.0.0.1:8000/chat/lobby/`
-###Type the message “hello” and press enter. You should now see “hello” echoed in the chat log.
+### Go to the room page at `http://127.0.0.1:8000/chat/lobby/`
+### Type the message “hello” and press enter. You should now see “hello” echoed in the chat log.
 However if you <mark>open a second browser tab</mark> to the same room page at `http://127.0.0.1:8000/chat/lobby/` and type in a message, 
 the <mark>message will not appear</mark> in the first tab. For that to work, <mark>we need to have multiple instances of the same ChatConsumer</mark>
 be able to talk to each other. Channels provides a `channel laye`r abstraction that enables this kind of communication between consumers.
 
-###Enable a channel layer
+### Enable a channel layer
 A channel layer provides:
 *A channel is a mailbox where messages can be sent to
 *A group is a group of related channels.
@@ -446,8 +446,8 @@ the <mark>second browser</mark> tab and in the <mark>first browser</mark> tab.
 
 <h3>I Gotcha You My Bro ... Congrats ... You now have a basic <mark>fully-functional</mark> chat server!<h3>
 
-##Rewrite Chat Server as Asynchronous
-###Rewrite the consumer to be asynchronous
+## Rewrite Chat Server as Asynchronous
+### Rewrite the consumer to be asynchronous
 Put the following code in `chat/consumers.py`:
 ```
 # chat/consumers.py
@@ -496,12 +496,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 ```
 python3 manage.py runserver
 ```
-###Final Test:
+### Final Test:
 Open a browser tab to the room page at `http://127.0.0.1:8000/chat/lobby/`. Open a second browser tab to the same room page.
 In the second browser tab, type the message “hello” and press enter. You should now see “hello” echoed in the chat log in both 
 the second browser tab and in the first browser tab.
 
-<h3>Congrats ... Now your chat server is fully asynchronous!</h3>
+<h3>🎉Congrats ... Now your chat server is fully asynchronous!</h3>
 
 
 
